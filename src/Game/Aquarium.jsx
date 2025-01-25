@@ -12,6 +12,16 @@ function Aquarium({ }) {
           <meshStandardMaterial color="navajowhite" /> {/* Color of the plane */}
       </mesh>
 
+      <mesh position={[0, 8, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[20, 40]} /> {/* Adjust size to fit the tank */}
+        <meshStandardMaterial
+          color={new THREE.Color(0x0077be)} // Light blue color
+          transparent={true}
+          opacity={0.5} // Semi-transparent
+          side={THREE.DoubleSide} // Render both sides
+        />
+      </mesh>
+
       <mesh position={[0, 3, -20]} rotation={[0, 0, 0]}>
         <planeGeometry args={[20, 10]} />
         <meshPhysicalMaterial

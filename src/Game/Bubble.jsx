@@ -25,7 +25,7 @@ function Bubble({ position, onClick, onRemove }) {
       meshRef.current.position.x += Math.sin(Date.now() * 0.001) * 0.005;
 
       // Remove the bubble if it goes off-screen and onRemove is provided
-      if (meshRef.current.position.y > 10 && onRemove) {
+      if (meshRef.current.position.y > 8 && onRemove) {
         onRemove(); // Call the onRemove callback
       }
     }
