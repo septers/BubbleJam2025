@@ -293,23 +293,6 @@ function GameScene({ onBackToMenu }) {
             <meshStandardMaterial color="blue" />
           </mesh>
         ))}
-
-        {/* Render a box or sphere at the intersection point */}
-        {intersectPoint && (
-          <mesh position={[intersectPoint.x, intersectPoint.y, intersectPoint.z]}>
-            {currentItem === 'Harpoon' ? (
-              <>
-                <boxGeometry args={[0.5, 0.5, 0.5]} />
-                <meshStandardMaterial color="red" />
-              </>
-            ) : (
-              <>
-                <sphereGeometry args={[0.5, 32, 32]} />
-                <meshStandardMaterial color="blue" />
-              </>
-            )}
-          </mesh>
-        )}
       </Canvas>
 
       {/* Crosshair dot at the center of the screen */}
@@ -357,13 +340,13 @@ function GameScene({ onBackToMenu }) {
             <h2>Shop</h2>
             <p>Bubbles: {money}</p>
             <p>Bubble Makers</p>
-            <button onClick={() => purchaseItem("Coral", 1)}>Coral (5)</button>
-            <button onClick={() => purchaseItem("Plant", 1)}>Plants (50)</button>
-            <button onClick={() => purchaseItem("Tank", 1)}>Oxygen Tank (500)</button>
+            <button onClick={() => purchaseItem("Coral", 5)}>Coral (5)</button>
+            <button onClick={() => purchaseItem("Plant", 20)}>Plants (20)</button>
+            <button onClick={() => purchaseItem("Tank", 100)}>Oxygen Tank (100)</button>
             <p>Bubble Poppers</p>
-            <button onClick={() => purchaseItem("SlowFish", 1)}>Buy Slow Fish (25)</button>
-            <button onClick={() => purchaseItem("NormalFish", 1)}>Buy Normal Fish (250)</button>
-            <button onClick={() => purchaseItem("FastFish", 1)}>Buy Fast Fish (2500)</button>
+            <button onClick={() => purchaseItem("SlowFish", 20)}>Buy Slow Fish (20)</button>
+            <button onClick={() => purchaseItem("NormalFish", 50)}>Buy Normal Fish (50)</button>
+            <button onClick={() => purchaseItem("FastFish", 500)}>Buy Fast Fish (500)</button>
             <p>Decorations</p>
             <button onClick={() => purchaseItem("Sphere", 1)}>Buy Sphere (1)</button>
             

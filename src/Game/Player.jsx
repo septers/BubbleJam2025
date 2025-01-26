@@ -6,7 +6,7 @@ import { useKeyboardControls } from '../Hooks/KeyboardControls';
 export function Player() {
   const { camera } = useThree();
   const keys = useKeyboardControls();
-  const moveSpeed = 0.25; // Movement speed
+  const moveSpeed = 0.05; // Movement speed
   const lookSpeed = 0.002; // Mouse look sensitivity
 
   const pitch = useRef(0); // Up/down rotation
@@ -15,8 +15,8 @@ export function Player() {
   const aquariumBounds = {
     minX: -9,
     maxX: 9,
-    minY: -2,
-    maxY: 8,
+    minY: -1,
+    maxY: 7,
     minZ: -19,
     maxZ: 19,
   };
@@ -27,9 +27,8 @@ export function Player() {
 
   useEffect(() => {
     const handleMouseMove = (e) => {
-
-      var islocked = document.pointerLockElement;
-      if (islocked){
+      const isLocked = document.pointerLockElement;
+      if (isLocked) {
         // Update camera rotation based on mouse movement
         const { movementX, movementY } = e;
 
@@ -53,14 +52,20 @@ export function Player() {
     const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw.current);
     const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw.current);
 
+    // Horizontal movement
     if (keys.current['KeyW']) direction.add(forward);
     if (keys.current['KeyS']) direction.sub(forward);
     if (keys.current['KeyA']) direction.sub(right);
     if (keys.current['KeyD']) direction.add(right);
 
+    // Vertical movement
+    if (keys.current['KeyE']) direction.y += moveSpeed; // Rise
+    if (keys.current['KeyQ']) direction.y -= moveSpeed; // Lower
+
     direction.normalize().multiplyScalar(moveSpeed);
     camera.position.add(direction);
 
+    // Clamp camera position within aquarium bounds
     camera.position.x = THREE.MathUtils.clamp(camera.position.x, aquariumBounds.minX, aquariumBounds.maxX);
     camera.position.y = THREE.MathUtils.clamp(camera.position.y, aquariumBounds.minY, aquariumBounds.maxY);
     camera.position.z = THREE.MathUtils.clamp(camera.position.z, aquariumBounds.minZ, aquariumBounds.maxZ);

@@ -52,6 +52,11 @@ html, body{
   width: 100%;
 }
 
+.StartButton{
+  background-color: green;
+  width: 50%;
+}
+
 .Canvas,
 .main-menu,
 .settings-menu,
