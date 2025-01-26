@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import * as THREE from 'three';
@@ -11,11 +11,17 @@ import Skybox from './Skybox';
 function GameScene({ onBackToMenu }) {
   const [money, setMoney] = useState(0);
   const [bubbles, setBubbles] = useState([]);
+  const bubblesRef = useRef([]); // Store references to bubble objects
 
   // Function to handle spawning bubbles
   const handleSpawn = (position) => {
     const id = Date.now(); // Unique ID for each bubble
-    setBubbles((prevBubbles) => [...prevBubbles, { id, position }]);
+    const bubble = {
+      id,
+      position,
+      ref: null, // Will store the reference to the Bubble object
+    };
+    setBubbles((prevBubbles) => [...prevBubbles, bubble]);
   };
 
   // Function to handle clicking on a bubble
@@ -29,6 +35,11 @@ function GameScene({ onBackToMenu }) {
     setBubbles((prevBubbles) => prevBubbles.filter((bubble) => bubble.id !== id));
   };
 
+  // Update the bubblesRef whenever the bubbles state changes
+  useEffect(() => {
+    bubblesRef.current = bubbles.map((bubble) => bubble.ref).filter((ref) => ref !== null);
+  }, [bubbles]);
+
   return (
     <>
       {/* 3D Game Scene */}
@@ -36,14 +47,9 @@ function GameScene({ onBackToMenu }) {
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} intensity={0.5} />
 
-
         <Skybox />
-
         <Aquarium />
-
-        <Player />
-
-
+        <Player bubbles={bubblesRef.current} bubbleClick={handleBubbleClick}/> {/* Pass the bubbles to Player */}
 
         {/* Spawner */}
         <Spawner onSpawn={handleSpawn} />
@@ -55,13 +61,19 @@ function GameScene({ onBackToMenu }) {
             position={[bubble.position.x, bubble.position.y, bubble.position.z]}
             onClick={() => handleBubbleClick(bubble.id)} // Pass the bubble's ID to the click handler
             onRemove={() => handleBubbleRemove(bubble.id)} // Pass the bubble's ID to the remove handler
+            ref={(ref) => {
+              // Store the reference to the Bubble object
+              if (ref) {
+                bubble.ref = ref;
+              }
+            }}
           />
         ))}
       </Canvas>
 
       <div className="game-ui">
         <p className="CurrencyHolder">Bubbles: {money}</p>
-        <button onClick={onBackToMenu}>Back to Menu</button>
+        <button onClick={onBackToMenu} className="BackButton">Back to Menu</button>
       </div>
     </>
   );

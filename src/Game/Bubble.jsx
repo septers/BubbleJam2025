@@ -1,9 +1,12 @@
-import React, { useRef } from 'react';
+import React, { forwardRef, useRef, useImperativeHandle } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-function Bubble({ position, onClick, onRemove }) {
+const Bubble = forwardRef(({ position, onClick, onRemove }, ref) => {
   const meshRef = useRef(); // Reference to the bubble's mesh
+
+  // Forward the meshRef to the parent component
+  useImperativeHandle(ref, () => meshRef.current);
 
   // Create a custom material with two-tone colors and transparency
   const material = new THREE.MeshPhysicalMaterial({
@@ -37,6 +40,6 @@ function Bubble({ position, onClick, onRemove }) {
       <primitive object={material} attach="material" /> {/* Use the custom material */}
     </mesh>
   );
-}
+});
 
 export default Bubble;
