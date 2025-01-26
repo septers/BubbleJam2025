@@ -52,7 +52,7 @@ html, body{
   width: 100%;
 }
 
-
+.Canvas,
 .main-menu,
 .settings-menu,
 .game-ui {
@@ -66,8 +66,9 @@ html, body{
 
 .CurrencyHolder{
   position: fixed;
-  right: 0px;
+  left: 50%;
   top: 0px;
+  transform: translate(-50%, -50%);
   color: white;
   font-size: 3em;
   padding-right: 1em;
