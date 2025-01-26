@@ -19,7 +19,7 @@ function GameScene({ onBackToMenu }) {
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [placedSpheres, setPlacedSpheres] = useState([]);
 
-  const [currentItem, setCurrentItem] = useState('box'); // Track the current item you're holding (default is 'box')
+  const [currentItem, setCurrentItem] = useState('Harpoon'); // Track the current item you're holding (default is 'box')
   const [inventory, setInventory] = useState([]); // Store inventory items
 
   const [fishes, setFishes] = useState([]);
@@ -32,11 +32,11 @@ function GameScene({ onBackToMenu }) {
   const gameUIRef = useRef(); // Reference to the UI elements (currency and back button)
 
 
-  const handlePlaceFish = (position) => {
+  const handlePlaceFish = (position, rarity) => {
     const id = generateUniqueId();
     setFishes((prevFishes) => [
       ...prevFishes,
-      { id, position, ref: null },
+      { id, position, rarity, ref: null },
     ]);
   };
   
@@ -47,7 +47,6 @@ function GameScene({ onBackToMenu }) {
 
   const handleSpawn = (position) => {
     const id = generateUniqueId();
-    // Add a spawnerId to the bubble so we can track which spawner created it
     setBubbles((prevBubbles) => [
       ...prevBubbles,
       { id, position},
@@ -58,9 +57,9 @@ function GameScene({ onBackToMenu }) {
     return uuidv4();
   };
 
-  const addSpawner = (position) => {
+  const addSpawner = (position, rarity) => {
     const id = generateUniqueId();
-    setSpawners((prevSpawners) => [...prevSpawners, { id, position }]);
+    setSpawners((prevSpawners) => [...prevSpawners, { id, position, rarity}]);
   };
 
   const handleBubbleClick = (id) => {
@@ -113,14 +112,34 @@ function GameScene({ onBackToMenu }) {
             useItem("Sphere",1);
           }
 
-          if (currentItem == "Fish") {
-            handlePlaceFish(firstIntersect.point);
-            useItem("Fish",1);
+          if (currentItem == "SlowFish") {
+            handlePlaceFish(firstIntersect.point,1);
+            useItem("SlowFish",1);
           }
 
-          if (currentItem == "Spawner") {
-            addSpawner(firstIntersect.point);
-            useItem("Spawner",1);
+          if (currentItem == "NormalFish") {
+            handlePlaceFish(firstIntersect.point,2);
+            useItem("NormalFish",1);
+          }
+
+          if (currentItem == "FastFish") {
+            handlePlaceFish(firstIntersect.point,3);
+            useItem("FastFish",1);
+          }
+
+          if (currentItem == "Coral") {
+            addSpawner(firstIntersect.point, 1);
+            useItem("Coral",1);
+          }
+
+          if (currentItem == "Plant") {
+            addSpawner(firstIntersect.point, 2);
+            useItem("Plant",1);
+          }
+
+          if (currentItem == "Tank") {
+            addSpawner(firstIntersect.point, 3);
+            useItem("Tank",1);
           }
 
 
@@ -166,8 +185,7 @@ function GameScene({ onBackToMenu }) {
         // Item is not owned, add it to the inventory
         const newItem = {
           name: itemName,
-          quantity: 1, // Add the item with quantity 1 when purchased
-          image: 'path/to/item/image.png', // Set the image for the item (adjust as necessary)
+          quantity: 1,
         };
         setInventory((prevInventory) => [...prevInventory, newItem]);
       }
@@ -186,7 +204,7 @@ function GameScene({ onBackToMenu }) {
       // Remove the item from the inventory if its quantity reaches 0
       if (updatedInventory[ownedItemIndex].quantity <= 0) {
         updatedInventory.splice(ownedItemIndex, 1); // Remove the item from the array
-        setCurrentItem('box');
+        setCurrentItem('Harpoon');
       }
   
       setInventory(updatedInventory); // Update the state with the modified inventory
@@ -246,7 +264,8 @@ function GameScene({ onBackToMenu }) {
             key={spawner.id}
             spawnerId={spawner.id}  // Pass the spawnerId to the BubbleSpawner
             position={spawner.position}
-            spawnRate={100} // Customize spawn rate here
+            spawnRate={(5 - spawner.rarity) * 100} // Customize spawn rate here
+            rarity={spawner.rarity}
             onBubbleSpawn={(bubblePosition) => handleSpawn(bubblePosition, spawner.id)} // Pass the spawnerId
           />
         ))}
@@ -258,6 +277,7 @@ function GameScene({ onBackToMenu }) {
             position={fish.position}
             bubbles={bubbles} // Pass bubbles to fish for targeting
             onBubblePopped={handleBubblePoppedByFish}
+            rarity={fish.rarity}
             ref={(ref) => {
               if (ref) {
                 fish.ref = ref;
@@ -277,7 +297,7 @@ function GameScene({ onBackToMenu }) {
         {/* Render a box or sphere at the intersection point */}
         {intersectPoint && (
           <mesh position={[intersectPoint.x, intersectPoint.y, intersectPoint.z]}>
-            {currentItem === 'box' ? (
+            {currentItem === 'Harpoon' ? (
               <>
                 <boxGeometry args={[0.5, 0.5, 0.5]} />
                 <meshStandardMaterial color="red" />
@@ -336,9 +356,17 @@ function GameScene({ onBackToMenu }) {
           <div style={{ padding: '20px' }}>
             <h2>Shop</h2>
             <p>Bubbles: {money}</p>
+            <p>Bubble Makers</p>
+            <button onClick={() => purchaseItem("Coral", 1)}>Coral (5)</button>
+            <button onClick={() => purchaseItem("Plant", 1)}>Plants (50)</button>
+            <button onClick={() => purchaseItem("Tank", 1)}>Oxygen Tank (500)</button>
+            <p>Bubble Poppers</p>
+            <button onClick={() => purchaseItem("SlowFish", 1)}>Buy Slow Fish (25)</button>
+            <button onClick={() => purchaseItem("NormalFish", 1)}>Buy Normal Fish (250)</button>
+            <button onClick={() => purchaseItem("FastFish", 1)}>Buy Fast Fish (2500)</button>
+            <p>Decorations</p>
             <button onClick={() => purchaseItem("Sphere", 1)}>Buy Sphere (1)</button>
-            <button onClick={() => purchaseItem("Fish", 1)}>Buy Fish (1)</button>
-            <button onClick={() => purchaseItem("Spawner", 1)}>Spawner (1)</button>
+            
           </div>
         )}
       </div>
