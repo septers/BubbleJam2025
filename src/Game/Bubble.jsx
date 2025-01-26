@@ -36,7 +36,7 @@ const Bubble = forwardRef(({ position, onClick, onRemove }, ref) => {
 
   return (
     <mesh ref={meshRef} position={position} onClick={onClick}>
-      <sphereGeometry args={[0.2, 32, 32]} />
+      <sphereGeometry args={[0.5, 32, 32]} />
       <primitive object={material} attach="material" /> {/* Use the custom material */}
     </mesh>
   );

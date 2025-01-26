@@ -2,10 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import Bubble from './Bubble';
-import Spawner from './Spawner';
-import { Player } from './Player';
+import BaseSpawner from './BaseBubbleSpawner';
+import BubbleSpawner from './PurchasedBubbleSpawner.jsx';
+import {Player} from './Player';
+import Fish from './Fish';
 import Aquarium from './Aquarium';
 import Skybox from './Skybox';
+import { v4 as uuidv4 } from 'uuid';
+import './Gamescene.css';
 
 function GameScene({ onBackToMenu }) {
   const [money, setMoney] = useState(0);
@@ -13,19 +17,50 @@ function GameScene({ onBackToMenu }) {
   const [intersectPoint, setIntersectPoint] = useState(null);
   const [isPointerLocked, setIsPointerLocked] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false);
-  const [isSpherePurchased, setIsSpherePurchased] = useState(false);
+  const [placedSpheres, setPlacedSpheres] = useState([]);
+
+  const [currentItem, setCurrentItem] = useState('box'); // Track the current item you're holding (default is 'box')
+  const [inventory, setInventory] = useState([]); // Store inventory items
+
+  const [fishes, setFishes] = useState([]);
+  const [spawners, setSpawners] = useState([]);
+  
   const cameraRef = useRef();
   const aquariumPlanesRef = useRef([]);
   const canvasRef = useRef();
   const menuRef = useRef(); // Reference to the whole menu (including shop sidebar)
   const gameUIRef = useRef(); // Reference to the UI elements (currency and back button)
 
-  const handleSpawn = (position) => {
-    const id = Date.now();
-    setBubbles((prevBubbles) => [
-      ...prevBubbles,
+
+  const handlePlaceFish = (position) => {
+    const id = generateUniqueId();
+    setFishes((prevFishes) => [
+      ...prevFishes,
       { id, position, ref: null },
     ]);
+  };
+  
+  const handleBubblePoppedByFish = (id) => {
+    setMoney((prevMoney) => prevMoney + 1);
+    setBubbles((prevBubbles) => prevBubbles.filter((bubble) => bubble.id !== id));
+  };
+
+  const handleSpawn = (position) => {
+    const id = generateUniqueId();
+    // Add a spawnerId to the bubble so we can track which spawner created it
+    setBubbles((prevBubbles) => [
+      ...prevBubbles,
+      { id, position},
+    ]);
+  };
+  
+  const generateUniqueId = () => {
+    return uuidv4();
+  };
+
+  const addSpawner = (position) => {
+    const id = generateUniqueId();
+    setSpawners((prevSpawners) => [...prevSpawners, { id, position }]);
   };
 
   const handleBubbleClick = (id) => {
@@ -37,45 +72,17 @@ function GameScene({ onBackToMenu }) {
     setBubbles((prevBubbles) => prevBubbles.filter((bubble) => bubble.id !== id));
   };
 
-  // Handle pointer lock change events
-  const handlePointerLockChange = () => {
-    setIsPointerLocked(!!document.pointerLockElement);
-  };
-
-  useEffect(() => {
-    // Listen for pointer lock events
-    document.addEventListener('pointerlockchange', handlePointerLockChange);
-    document.addEventListener('mozpointerlockchange', handlePointerLockChange);
-
-    return () => {
-      document.removeEventListener('pointerlockchange', handlePointerLockChange);
-      document.removeEventListener('mozpointerlockchange', handlePointerLockChange);
-    };
-  }, []);
-
-  const handlePointerLock = () => {
-    if (!isPointerLocked && !isShopOpen) {
+  const handlePointerLockRequest = () => {
+    if (!isPointerLocked) {
+      console.log("Requesting pointer lock...");
       canvasRef.current.requestPointerLock();
-    }
-  };
-
-  const handleEscape = () => {
-    if (isPointerLocked) {
-      document.exitPointerLock();
     }
   };
 
   useEffect(() => {
     const handleClick = (e) => {
-      // Prevent pointer lock when clicking inside the shop menu or UI
-      if (menuRef.current && menuRef.current.contains(e.target)) {
-        return; // Skip pointer lock if click is inside the shop menu
-      }
-
-      if (gameUIRef.current && gameUIRef.current.contains(e.target)) {
-        return; // Skip pointer lock if click is inside the game UI (currency or back button)
-      }
-
+      console.log("clicked");
+      
       if (!cameraRef.current) return;
 
       const raycaster = new THREE.Raycaster();
@@ -92,51 +99,103 @@ function GameScene({ onBackToMenu }) {
       ];
 
       const intersects = raycaster.intersectObjects(allObjects, true);
-      if (intersects.length > 0) {
-        const firstIntersect = intersects[0];
-        setIntersectPoint(firstIntersect.point);
+        if (intersects.length > 0) {
+          const firstIntersect = intersects[0];
+          setIntersectPoint(firstIntersect.point);
 
-        // If the sphere is purchased, create a sphere at the intersection point
-        if (isSpherePurchased) {
-          const sphereGeometry = new THREE.SphereGeometry(0.5, 32, 32);
-          const sphereMaterial = new THREE.MeshStandardMaterial({ color: 'blue' });
-          const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-          sphere.position.set(firstIntersect.point.x, firstIntersect.point.y, firstIntersect.point.z);
-          scene.add(sphere); // Assuming `scene` is available, this may need adjustment depending on your setup.
-          setIsSpherePurchased(false); // Reset after placing
-        }
+          console.log("Holding",currentItem);
+          // If the sphere is purchased, add a new sphere to the placedSpheres array
+          if (currentItem == "Sphere") {
+            setPlacedSpheres((prevSpheres) => [
+              ...prevSpheres,
+              firstIntersect.point,
+            ]);
+            useItem("Sphere",1);
+          }
 
-        // Handle bubble click
-        if (bubbles.some((bubble) => bubble.ref === firstIntersect.object)) {
-          const clickedBubble = bubbles.find((bubble) => bubble.ref === firstIntersect.object);
-          handleBubbleClick(clickedBubble.id);
-        }
+          if (currentItem == "Fish") {
+            handlePlaceFish(firstIntersect.point);
+            useItem("Fish",1);
+          }
+
+          if (currentItem == "Spawner") {
+            addSpawner(firstIntersect.point);
+            useItem("Spawner",1);
+          }
+
+
+          // Handle bubble click
+          if (bubbles.some((bubble) => bubble.ref === firstIntersect.object)) {
+            const clickedBubble = bubbles.find((bubble) => bubble.ref === firstIntersect.object);
+            handleBubbleClick(clickedBubble.id);
+          }
+        };
       }
-    };
 
-    window.addEventListener('click', handleClick);
-    return () => {
-      window.removeEventListener('click', handleClick);
+      var islocked = document.pointerLockElement;
+      if(islocked){
+        console.log("Locked and sending click")
+        window.addEventListener('click', handleClick);
+        return () => {
+          window.removeEventListener('click', handleClick);
+        }
     };
-  }, [bubbles, isSpherePurchased]);
+  }, [bubbles]);
 
   const toggleShop = () => {
     setIsShopOpen((prev) => {
-      if (!prev) {
-        document.exitPointerLock(); // Exit pointer lock when opening the shop
-      }
-      return !prev;
+      const newShopState = !prev;
+      return newShopState;
     });
   };
 
-  // Handle the purchase of the sphere for 10 bubbles
-  const purchaseSphere = () => {
-    console.log("buy")
-    if (money >= 10) {
-      setMoney((prevMoney) => prevMoney - 10);
-      setIsSpherePurchased(true);
+  // Handle the purchase of the sphere for 1 bubble
+  const purchaseItem = (itemName, itemPrice) => {
+    // Check if we can buy the item
+    if (money >= itemPrice) {
+      // Remove the money to purchase the item
+      setMoney((prevMoney) => prevMoney - itemPrice);
+      // Check if the item is already owned (present in the inventory)
+      const ownedItemIndex = inventory.findIndex((invItem) => invItem.name === itemName);
+      if (ownedItemIndex !== -1) {
+        // Item is already owned, increment the quantity
+        const updatedInventory = [...inventory];
+        updatedInventory[ownedItemIndex].quantity += 1; // Assuming the item has a 'quantity' field
+        setInventory(updatedInventory);
+      } else {
+        // Item is not owned, add it to the inventory
+        const newItem = {
+          name: itemName,
+          quantity: 1, // Add the item with quantity 1 when purchased
+          image: 'path/to/item/image.png', // Set the image for the item (adjust as necessary)
+        };
+        setInventory((prevInventory) => [...prevInventory, newItem]);
+      }
+    } else {
+      console.log("Not enough money to purchase item.");
     }
   };
+
+  const useItem = (itemName, qtyUsed) => {
+    const ownedItemIndex = inventory.findIndex((invItem) => invItem.name === itemName);
+    const updatedInventory = [...inventory];
+  
+    if (ownedItemIndex !== -1 && qtyUsed <= updatedInventory[ownedItemIndex].quantity) {
+      updatedInventory[ownedItemIndex].quantity -= qtyUsed;
+  
+      // Remove the item from the inventory if its quantity reaches 0
+      if (updatedInventory[ownedItemIndex].quantity <= 0) {
+        updatedInventory.splice(ownedItemIndex, 1); // Remove the item from the array
+        setCurrentItem('box');
+      }
+  
+      setInventory(updatedInventory); // Update the state with the modified inventory
+      console.log(`Used ${qtyUsed} ${itemName}(s).`);
+    } else {
+      console.log(`Not enough ${itemName}(s) to use or item not found.`);
+    }
+  };
+  
 
   return (
     <>
@@ -146,11 +205,10 @@ function GameScene({ onBackToMenu }) {
         onCreated={({ camera }) => {
           cameraRef.current = camera;
         }}
-        onClick={handlePointerLock} // Allow pointer lock on canvas click
+        onClick={handlePointerLockRequest} // Allow pointer lock on canvas click
         style={{
           transition: 'width 0.5s ease',
           width: isShopOpen ? 'calc(100% - 300px)' : '100%',
-          pointerEvents: isShopOpen ? 'none' : 'auto', // Disable canvas pointer events when shop is open
         }}
       >
         <ambientLight intensity={0.5} />
@@ -165,7 +223,7 @@ function GameScene({ onBackToMenu }) {
           }}
         />
         <Player />
-        <Spawner onSpawn={handleSpawn} />
+        <BaseSpawner onSpawn={handleSpawn} />
 
         {/* Render bubbles */}
         {bubbles.map((bubble) => (
@@ -182,107 +240,115 @@ function GameScene({ onBackToMenu }) {
           />
         ))}
 
-        {/* Render a box at the intersection point */}
-        {intersectPoint && !isSpherePurchased && (
+        {/* Render bubble Spawners */}
+        {spawners.map((spawner) => (
+          <BubbleSpawner
+            key={spawner.id}
+            spawnerId={spawner.id}  // Pass the spawnerId to the BubbleSpawner
+            position={spawner.position}
+            spawnRate={100} // Customize spawn rate here
+            onBubbleSpawn={(bubblePosition) => handleSpawn(bubblePosition, spawner.id)} // Pass the spawnerId
+          />
+        ))}
+
+        {/* Render all placed Fish */}
+        {fishes.map((fish) => (
+          <Fish
+            key={fish.id}
+            position={fish.position}
+            bubbles={bubbles} // Pass bubbles to fish for targeting
+            onBubblePopped={handleBubblePoppedByFish}
+            ref={(ref) => {
+              if (ref) {
+                fish.ref = ref;
+              }
+            }}
+          />
+        ))}
+
+        {/* Render all placed spheres */}
+        {placedSpheres.map((position, index) => (
+          <mesh key={index} position={position}>
+            <sphereGeometry args={[0.5, 32, 32]} />
+            <meshStandardMaterial color="blue" />
+          </mesh>
+        ))}
+
+        {/* Render a box or sphere at the intersection point */}
+        {intersectPoint && (
           <mesh position={[intersectPoint.x, intersectPoint.y, intersectPoint.z]}>
-            <boxGeometry args={[0.5, 0.5, 0.5]} />
-            <meshStandardMaterial color="red" />
+            {currentItem === 'box' ? (
+              <>
+                <boxGeometry args={[0.5, 0.5, 0.5]} />
+                <meshStandardMaterial color="red" />
+              </>
+            ) : (
+              <>
+                <sphereGeometry args={[0.5, 32, 32]} />
+                <meshStandardMaterial color="blue" />
+              </>
+            )}
           </mesh>
         )}
       </Canvas>
 
       {/* Crosshair dot at the center of the screen */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: isShopOpen ? 'calc(50% - 150px)' : '50%', // Offset left when shop is open
-          width: '10px',
-          height: '10px',
-          backgroundColor: 'red',
-          borderRadius: '50%',
-          transform: 'translate(-50%, -50%)',
-          pointerEvents: 'none',
-        }}
+      <div className='Crosshair'
+        style={{ left: isShopOpen ? 'calc(50% - 150px)' : '50%' }}
       />
-
-
       {/* Pointer lock instructions */}
       <div
-        style={{
-          position: 'absolute',
-          top: '20%',
-          left: '50%',
-          left: isShopOpen ? 'calc(50% - 300px)' : 'calc(50% - 100px)',
-          fontSize: '18px',
-          color: 'white',
-          pointerEvents: 'none',
-        }}
+        className='PlockInst'
+        style={{ left: isShopOpen ? 'calc(50% - 150px)' : 'calc(50% - 100px)' }}
       >
-        {!isPointerLocked ? (
+        {!document.pointerLockElement ? (
           <p>Click to enter submarine</p>
         ) : (
           <p>Hit ESC to exit submarine</p>
         )}
       </div>
 
+      {/*Inventory */}
+      <div className='Inventory'>
+        <div className='HeldItem'>{currentItem}</div>
+        <div className='Backpack'>
+          {inventory.map((InventoryItem) =>(
+            <div onClick={()=>setCurrentItem(InventoryItem.name)}>
+              {InventoryItem.name} x {InventoryItem.quantity}
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Shop button */}
-      <div
+      <div className='ShopButton'
         onClick={toggleShop}
-        style={{
-          position: 'absolute',
-          top: '50%',
-          right: '0',
-          transform: 'translateY(-50%)',
-          backgroundColor: 'green',
-          color: 'white',
-          padding: '10px',
-          cursor: 'pointer',
-          zIndex: 100,
-          borderRadius: '5px 0 0 5px',
-        }}
       >
         {isShopOpen ? 'Close Shop' : 'Open Shop'}
       </div>
 
       {/* Shop Sidebar */}
-      <div
+      <div className='ShopSidebar'
         ref={menuRef}
-        style={{
-          position: 'absolute',
-          top: '0',
-          right: '0',
-          height: '100%',
-          width: isShopOpen ? '600px' : '0',
-          backgroundColor: '#222',
-          color: 'white',
-          transition: 'width 0.5s ease',
-          overflow: 'hidden',
-          boxSizing: 'border-box',
-        }}
+        style={{ width: isShopOpen ? '300px' : '0px' }}
       >
         {isShopOpen && (
           <div style={{ padding: '20px' }}>
             <h2>Shop</h2>
-            <p>Money: {money}</p>
-            <button onClick={purchaseSphere}>Buy Sphere (10)</button>
+            <p>Bubbles: {money}</p>
+            <button onClick={() => purchaseItem("Sphere", 1)}>Buy Sphere (1)</button>
+            <button onClick={() => purchaseItem("Fish", 1)}>Buy Fish (1)</button>
+            <button onClick={() => purchaseItem("Spawner", 1)}>Spawner (1)</button>
           </div>
         )}
       </div>
 
       {/* Game UI */}
       <div
+        className='GameUI'
         ref={gameUIRef}
-        style={{
-          position: 'fixed',
-          top: '0px',
-          left: '20px',
-          color: 'white',
-          fontSize: '18px',
-          zIndex: 200,
-        }}
       >
-        <p>Bubbles: {money}</p>
+        <p className='BubbleCount'>Bubbles: {money}</p>
       </div>
     </>
   );

@@ -1,0 +1,115 @@
+.Crosshair{
+    position: absolute;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    background-Color: red;
+    border-Radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-Events: none;
+}
+
+.PlockInst{
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    font-Size: 18px;
+    color:white;
+    pointer-Events: none;
+}
+
+.ShopButton{
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    background-Color: green;
+    color: white;
+    padding: 10px;
+    cursor: pointer;
+    z-Index: 10;
+    border-Radius: 5px 0 0 5px;
+}
+
+.ShopSidebar{
+        position: absolute;
+        top: 0;
+        right: 0;
+        height: 100%;
+        background-Color: #222;
+        color: white;
+        transition: width 0.5s ease;
+        overflow: hidden;
+        box-Sizing: border-box;
+}
+
+.GameUI{
+    position: fixed;
+    top: 1em;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-Size: 18px;
+    z-Index: 20;
+}
+
+.BubbleCount{
+    padding-top: 1em;
+    font-size: 48px;
+}
+
+.Inventory {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    z-index: 10; /* Ensure it stays above other elements */
+  }
+  
+  .HeldItem {
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 2px solid #000;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    color: #333;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  }
+  
+  .Backpack {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    max-width: 300px; /* Limit the backpack width for better layout */
+  }
+  
+  .Backpack div {
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 2px solid #000;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    color: #333;
+    width: 60px; /* Fixed width for the item boxes */
+    height: 60px; /* Fixed height for the item boxes */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .Backpack div:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
+  }
+  

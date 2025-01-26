@@ -8,7 +8,6 @@ export function Player() {
   const keys = useKeyboardControls();
   const moveSpeed = 0.25; // Movement speed
   const lookSpeed = 0.002; // Mouse look sensitivity
-  const isLocked = useRef(false); // Track pointer lock state
 
   const pitch = useRef(0); // Up/down rotation
   const yaw = useRef(0); // Left/right rotation
@@ -27,20 +26,11 @@ export function Player() {
   }, [camera]);
 
   useEffect(() => {
-    const handlePointerLockChange = () => {
-      isLocked.current = document.pointerLockElement === document.body;
-    };
-
-    document.addEventListener('pointerlockchange', handlePointerLockChange);
-
-    return () => {
-      document.removeEventListener('pointerlockchange', handlePointerLockChange);
-    };
-  }, []);
-
-  useEffect(() => {
     const handleMouseMove = (e) => {
-      if (isLocked.current) {
+
+      var islocked = document.pointerLockElement;
+      if (islocked){
+        // Update camera rotation based on mouse movement
         const { movementX, movementY } = e;
 
         yaw.current -= movementX * lookSpeed;
@@ -57,20 +47,6 @@ export function Player() {
       document.removeEventListener('mousemove', handleMouseMove);
     };
   }, [camera, lookSpeed]);
-
-  useEffect(() => {
-    const handleClick = () => {
-      if (!isLocked.current) {
-        document.body.requestPointerLock();
-      }
-    };
-
-    document.body.addEventListener('click', handleClick);
-
-    return () => {
-      document.body.removeEventListener('click', handleClick);
-    };
-  }, []);
 
   useFrame(() => {
     const direction = new THREE.Vector3();
